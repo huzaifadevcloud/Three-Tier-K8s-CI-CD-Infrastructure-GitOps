@@ -113,6 +113,163 @@ helm install aws-load-balancer-controller eks/aws-load-balancer-controller -n ku
 kubectl get deployment -n kube-system aws-load-balancer-controller
 kubectl apply -f full_stack_lb.yaml
 ```
+# Kubernetes Custom Host Access on Localhost — Complete Guide
+
+This guide outlines the **exact steps, paths, and configurations** you applied to access your EKS-deployed frontend/backend apps using custom hostnames like `frontend.three-tier-huzaifa-app` on your **local machine**.
+
+---
+
+## ✅ Purpose
+
+To access your Kubernetes applications using **custom hostnames** (instead of long ELB URLs), directly from your **local computer** (not the EC2 instance), by mapping domains to the AWS Load Balancer IPs.
+
+---
+
+## 🧩 Step-by-Step Process
+
+### 🔍 1. Get ALB DNS Name (with hash)
+
+To get the Load Balancer DNS created by AWS ALB Ingress Controller:
+
+```bash
+kubectl get ingress -n three-tier
+```
+
+Example output:
+
+```bash
+NAME      CLASS    HOSTS                                ADDRESS                                                               PORTS   AGE
+mainlb    alb      frontend.three-tier-huzaifa-app       k8s-threetie-mainlb-b5b9250791-1087900858.ap-south-1.elb.amazonaws.com   80      5m
+          backend.three-tier-huzaifa-app
+```
+
+The highlighted part is the DNS of your Application Load Balancer.
+
+---
+
+### 🌐 2. Find the Load Balancer IP Address
+
+Use `nslookup` or `dig`:
+
+```bash
+nslookup k8s-threetie-mainlb-<hash>.ap-south-1.elb.amazonaws.com
+```
+
+Or:
+
+```bash
+dig +short k8s-threetie-mainlb-<hash>.ap-south-1.elb.amazonaws.com
+```
+
+Example result:
+
+```
+3.108.19.95
+35.154.73.129
+```
+
+---
+
+### ✏️ 3. Edit Local Hosts File
+
+**Path:** `/etc/hosts`
+
+**Command:**
+
+```bash
+sudo nano /etc/hosts
+```
+
+**Add lines at the bottom:**
+
+```ini
+35.154.73.129   frontend.three-tier-huzaifa-app
+35.154.73.129   backend.three-tier-huzaifa-app
+```
+
+📝 This maps your domain to the Load Balancer IP address for your machine.
+
+---
+
+### ⚙️ 4. Configure Ingress Rules
+
+**File:**
+`~/Three-Tier-K8s-CI-CD-Infrastructure-GitOps/Kubernetes-Manifests-file/ingress.yml`
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: mainlb
+  namespace: three-tier
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}]'
+spec:
+  ingressClassName: alb
+  rules:
+    - host: frontend.three-tier-huzaifa-app
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 3000
+
+    - host: backend.three-tier-huzaifa-app
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: api
+                port:
+                  number: 3500
+```
+
+---
+
+### 🚀 5. Test Locally
+
+From your **local machine**, test with:
+
+```bash
+curl http://frontend.three-tier-huzaifa-app
+curl http://backend.three-tier-huzaifa-app/api/tasks
+```
+
+Or open in a **browser**:
+
+* `http://frontend.three-tier-huzaifa-app`
+* `http://backend.three-tier-huzaifa-app/api/tasks`
+
+---
+
+## 🧠 Summary (Cheat Sheet)
+
+| Step | What You Did                | Tool / File           |
+| ---- | --------------------------- | --------------------- |
+| 1    | Got Load Balancer DNS       | `kubectl get ingress` |
+| 2    | Got LB IP                   | `nslookup`, `dig`     |
+| 3    | Mapped host to IP           | `/etc/hosts`          |
+| 4    | Configured hostname routing | `ingress.yml`         |
+| 5    | Accessed app via hostname   | Browser / curl        |
+
+---
+
+> ✅ I updated my `/etc/hosts` file on my **local machine** to access the application using custom hostnames.
+
+> 🔑 To get the hash-based DNS of the ALB (`k8s-threetie-mainlb-<hash>.elb.amazonaws.com`), I used:
+>
+> ```bash
+> kubectl get ingress -n three-tier
+> ```
+
 
 ### Cleanup
 - To delete the EKS cluster:
