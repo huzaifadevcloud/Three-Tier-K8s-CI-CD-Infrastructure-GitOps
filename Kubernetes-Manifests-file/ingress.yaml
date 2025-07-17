@@ -10,7 +10,7 @@ metadata:
 spec:
   ingressClassName: alb
   rules:
-    - host: backend.amanpathakdevops.study
+    - host: backend.three-tier-huzaifa-app
       http:
         paths:
           - path: /api
