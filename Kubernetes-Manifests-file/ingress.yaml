@@ -20,6 +20,9 @@ spec:
                 name: api
                 port:   
                   number: 3500
+    - host: frontend.three-tier-huzaifa-app
+      http:
+        paths:
           - path: /
             pathType: Prefix
             backend:
