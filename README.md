@@ -1,10 +1,7 @@
-# #ThreeTierAppChallenge
+# #ThreeTierApp
 
 ## Overview
-This repository hosts the `#ThreeTierApp`
-
-**Get The Challenge here**
-
+This repository hosts the `#ThreeTierApp` in which web-app with Dockerized microservices pushed to ECR, deployed to EKS via Terraform. Jenkins handles CI/CD with SonarQube (code quality), Trivy (security scanning + email alerts), ArgoCD (GitOps), Prometheus & Grafana (monitoring), and Helm for Kubernetes deployments.
 
 ## Steps
 - [Application Code](#application-code)
